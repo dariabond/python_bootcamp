@@ -8,17 +8,11 @@ FONT_NAME = "Courier"
 WORK_MIN = 25
 SHORT_BREAK_MIN = 5
 LONG_BREAK_MIN = 20
+timer = None
 
-current_cycles = 4
-
-# ---------------------------- TIMER RESET ------------------------------- #
-
-# ---------------------------- TIMER MECHANISM ------------------------------- #
-
-# ---------------------------- COUNTDOWN MECHANISM ------------------------------- #
+reps = 0
 
 # ---------------------------- UI SETUP ------------------------------- #
-
 window = Tk()
 window.title("Pomodoro")
 window.config(padx=100, pady=50, bg=YELLOW)
@@ -34,29 +28,57 @@ print('timer_text')
 print(timer_text)
 canvas.grid(column=2, row=2)
 
-
+# ---------------------------- COUNTDOWN MECHANISM ------------------------------- #
 def count_down(seconds):
-    if seconds >= 0:
-        text = str(seconds // 60) + ":" + (str(seconds % 60) if seconds % 60 > 0 else "00")
-        canvas.itemconfig(timer_text, text=f'{str(seconds // 60)}:{(str(seconds % 60) if seconds % 60 > 0 else "00")}')
-        window.after(1000, count_down, seconds - 1)
+    secs = seconds % 60
+    mins = seconds // 60
+    if secs < 10:
+        secs = f'0{secs}'
 
+    if secs == 0:
+        secs = "00"
+    canvas.itemconfig(timer_text, text=f'{mins}:{secs}')
+    if seconds > 0:
+        global timer
+        timer = window.after(1000, count_down, seconds - 1)
+    else:
+        on_start()
 
+# ---------------------------- TIMER MECHANISM ------------------------------- #
 def on_start():
     print("Start")
-    current_cycles = 4
-    count_down(WORK_MIN * 60)
+    global reps
+    global timer
+    reps += 1
+
+    work_secs = WORK_MIN * 60
+    short_break_secs = SHORT_BREAK_MIN * 60
+    long_break_secs = LONG_BREAK_MIN * 60
+
+    if reps % 8 == 0:
+        count_down(long_break_secs)
+        timer_label.config(text='Long break')
+    elif reps % 2 == 0:
+        count_down(short_break_secs)
+        timer_label.config(text='Short break')
+    else:
+        count_down(work_secs)
+        timer_label.config(text='Work time')
 
 
 start_button = Button(text="Start", command=on_start, bg=YELLOW, highlightthickness=0)
 start_button.grid(column=1, row=3)
 
+# ---------------------------- TIMER RESET ------------------------------- #
 def on_reset():
+    global timer
+    global reps
+    window.after_cancel(timer)
+    canvas.itemconfig(timer_text, text='00:00')
+    reps = 0
+    timer_label.config(text='Timer')
     print("Reset")
 
-
-def update_timer(mins, secs):
-    return
 
 reset_button = Button(text="Reset", command=on_reset, bg=YELLOW, highlightthickness=0)
 reset_button.grid(column=3, row=3)
